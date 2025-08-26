@@ -44,6 +44,17 @@ const addAudio = async (state, from, ctx, provider) => {
   try {
     console.log(`[addAudio] Iniciando descarga de audio para ${from}`);
 
+    // Importar módulos necesarios
+    const fs = await import("fs");
+    const path = await import("path");
+
+    // Crear la carpeta temp si no existe
+    const tempDir = "./temp";
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+      console.log(`[addAudio] Carpeta ${tempDir} creada`);
+    }
+
     // Usar provider.saveFile para guardar el archivo de audio
     const localPath = await provider.saveFile(ctx, { path: "./temp" });
 
@@ -53,7 +64,6 @@ const addAudio = async (state, from, ctx, provider) => {
     }
 
     // Leer el archivo guardado como buffer
-    const fs = await import("fs");
     const buffer = fs.readFileSync(localPath);
 
     // Captura el mimetype del mensaje de audio, si no, usa un valor por defecto
@@ -96,6 +106,17 @@ const addImage = async (state, from, ctx, provider) => {
   try {
     console.log(`[addImage] Iniciando descarga de imagen para ${from}`);
 
+    // Importar módulos necesarios
+    const fs = await import("fs");
+    const path = await import("path");
+
+    // Crear la carpeta temp si no existe
+    const tempDir = "./temp";
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+      console.log(`[addImage] Carpeta ${tempDir} creada`);
+    }
+
     // Usar provider.saveFile para guardar el archivo de imagen
     const localPath = await provider.saveFile(ctx, { path: "./temp" });
 
@@ -105,7 +126,6 @@ const addImage = async (state, from, ctx, provider) => {
     }
 
     // Leer el archivo guardado como buffer
-    const fs = await import("fs");
     const buffer = fs.readFileSync(localPath);
 
     const mimeType = ctx.message.imageMessage?.mimetype || "image/jpeg";
