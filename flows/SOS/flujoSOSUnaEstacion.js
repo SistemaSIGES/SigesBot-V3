@@ -49,10 +49,10 @@ const flujoSOSUnaEstacion = addKeyword("__FlujoSOS__")
         return fallBack();
       }
       await state.update({ [ctx.from]: { description: descriptionText, phone: ctx.from } });
+    await respuesta(ctx.from, provider, "Si desea adjuntar *IMAGENES* puede enviarlas ahora de una por vez o precionar *0* para continuar.")
     }
   )
-  .addAnswer(
-    "Si desea adjuntar una IMAGEN, envíela ahora. De lo contrario, escriba *0* para continuar.", // Pregunta directa por imagen o "no"
+  .addAction(
     { capture: true, idle: 200000 },
     async (ctx, { provider, state, endFlow, fallBack, gotoFlow }) => {
       if (ctx?.idleFallBack) {
@@ -66,19 +66,11 @@ const flujoSOSUnaEstacion = addKeyword("__FlujoSOS__")
 
       if (isImageByCtxType || isImageByBodyPattern) {
         await addImage(state, ctx.from, ctx, provider);
-        await respuesta(ctx.from, provider, "Imagen adjuntada. Procesando ticket...");
+        await respuesta(ctx.from, provider, "Si desea adjuntar *IMAGENES* puede enviarlas ahora de una por vez o precionar *0* para continuar.");
+        return fallBack()
       } else if (input === "0") {
-        await respuesta(ctx.from, provider, "No se adjuntará ninguna imagen. Procesando ticket...");
-      } else {
-        await respuesta(
-          ctx.from,
-          provider,
-          "Entrada inválida. Por favor, envíe una imagen o escriba *no*."
-        );
-        return fallBack();
-      }
-      //Utilidad para testeo, mensaje resumen del ticket
-      const selectedUser = await state.get("selectedUser"); // Obtener selectedUser del estado
+        await respuesta(ctx.from, provider, "Procesando ticket...");
+        const selectedUser = await state.get("selectedUser"); // Obtener selectedUser del estado
       if (selectedUser && selectedUser.testing === true) {
         // Verificar si el campo 'testing' es true
         await state.update({ priority: "4" });
@@ -115,6 +107,14 @@ const flujoSOSUnaEstacion = addKeyword("__FlujoSOS__")
         );
         await respuesta(ctx.from, provider, "Escriba *sigesbot* para volver a comenzar");
         return endFlow();
+      }
+      } else {
+        await respuesta(
+          ctx.from,
+          provider,
+          "Entrada inválida. Por favor, envíe una imagen o escriba *0*."
+        );
+        return fallBack();
       }
     }
   );
