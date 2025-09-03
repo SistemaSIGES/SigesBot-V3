@@ -74,6 +74,7 @@ const obtenerArchivosDeCategoria = async (folderId) => {
 
         // Eliminamos el prefijo numérico del nombre (ej: "1. Mi Archivo.pdf" -> "Mi Archivo.pdf").
         archivoCopia.name = archivoCopia.name.replace(/^\d+\.\s*/, "");
+        archivoCopia.name = archivoCopia.name.replace(/\.[^/.]+$/, "");
 
         return archivoCopia;
       });
