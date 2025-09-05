@@ -8,94 +8,7 @@ import {
   buildTicketSummaryMessage,
 } from "../../api/apiTickets.js";
 
-const flujoSOS = addKeyword("__FlujoSOS__")
-  .addAnswer(
-    "Esta opción está disponible para casos donde más de la mitad de los puntos de venta no pueden facturar. Envíe:\n1. Si esto es así.\n2. De no ser así.",
-    { capture: true, idle: 200000 },
-    async (ctx, { provider, endFlow, fallBack, state, gotoFlow }) => {
-      const input = ctx.body.toLowerCase().trim();
-      if (ctx?.idleFallBack) {
-        const { default: flujoInactividad } = await import("../flujoInactividad.js");
-        return gotoFlow(flujoInactividad);
-      }
-
-      if (input === "1") {
-        const clientSelectionResult = await getUsers(state, ctx.from); // getUsers ahora siempre devuelve una cadena o mensaje
-        const clientesDisponibles = await state.get("altaBotuserClientsOptions");
-        if (clientSelectionResult === "No se encontraron clientes asociados.") {
-          await respuesta(
-            ctx.from,
-            provider,
-            clientSelectionResult + " Por favor, contacte a soporte."
-          );
-          return endFlow("Gracias por comuncarte con siges"); // Termina el flujo si no hay clientes
-        } else if (clientesDisponibles.length === 1) {
-          const selectedClient = clientesDisponibles[0];
-          await state.update({ selectedUser: selectedClient });
-          await respuesta(
-            ctx.from,
-            provider,
-            `Incidente reportado para: ${selectedClient.info}`
-          );
-          await state.update({ altaBotuserClientsOptions: null });
-          const { default: flujoSOSUnaEstacion } = await import("./flujoSOSUnaEstacion.js");
-          return gotoFlow(flujoSOSUnaEstacion)
-        } else {
-          // Siempre que haya resultados, se muestra el menú de opciones
-          await respuestaConDelay(
-            ctx.from,
-            provider,
-            `Indique para qué estación quiere dar de alta este usuario (elija un número):\n${clientSelectionResult}`
-          );
-          // El flujo automáticamente pasará al siguiente addAnswer para capturar la selección.
-        }
-      } else if (input === "2") {
-        await respuesta(
-          ctx.from,
-          provider,
-          "Envíe *sigesbot* para volver a comenzar y genere un ticket en la opción *2*."
-        );
-        return endFlow();
-      } else {
-        await respuesta(
-          ctx.from,
-          provider,
-          "Opción inválida. Por favor, seleccione una opción válida."
-        );
-        return fallBack();
-      }
-    }
-  )
-  .addAnswer(
-    "Cargando estaciones...",
-    { capture: true, idle: 200000 },
-    async (ctx, { provider, state, fallBack, gotoFlow }) => {
-      if (ctx?.idleFallBack) {
-        const { default: flujoInactividad } = await import("../flujoInactividad.js");
-        return gotoFlow(flujoInactividad);
-      }
-      const clientesDisponibles = await state.get("altaBotuserClientsOptions");
-      if (clientesDisponibles !== null) {
-        const index = parseInt(ctx.body) - 1;
-
-        if (isNaN(index) || !clientesDisponibles?.[index]) {
-          await respuesta(ctx.from, provider, "Opción inválida.");
-          const clientSelectionResult = await getUsers(state, ctx.from);
-          await respuestaConDelay(
-            ctx.from,
-            provider,
-            `Indique para qué estación quiere dar de alta este usuario (elija un número):\n${clientSelectionResult}`
-          );
-          return fallBack();
-        }
-
-        const selectedClient = clientesDisponibles[index];
-        await state.update({ selectedUser: selectedClient });
-        await respuesta(ctx.from, provider, `Incidente reportado para: ${selectedClient.info}`);
-        await state.update({ altaBotuserClientsOptions: null });
-      }
-    }
-  )
+const flujoSOSUnaEstacion = addKeyword("__FlujoSOS__")
   .addAnswer(
     "Ahora, por favor, escriba una breve descripción del incidente o envíe un AUDIO explicando el mismo.", // Descripción puede ser texto o audio
     { capture: true, idle: 1000000 },
@@ -105,7 +18,6 @@ const flujoSOS = addKeyword("__FlujoSOS__")
         return gotoFlow(flujoInactividad);
       }
       let descriptionText = "";
-      // Detectar audio de forma robustaf
       const isAudioByCtxType = ctx.hasMedia && ctx.type === "audio";
       const isAudioByBodyPattern =
         typeof ctx.body === "string" && ctx.body.startsWith("_event_voice_note_");
@@ -137,7 +49,7 @@ const flujoSOS = addKeyword("__FlujoSOS__")
         return fallBack();
       }
       await state.update({ [ctx.from]: { description: descriptionText, phone: ctx.from } });
-      await respuesta(ctx.from, provider, "Si desea adjuntar *IMAGENES* puede enviarlas ahora de una por vez o precionar *0* para continuar.")
+    await respuesta(ctx.from, provider, "Si desea adjuntar *IMAGENES* puede enviarlas ahora de una por vez o precionar *0* para continuar.")
     }
   )
   .addAction(
@@ -207,4 +119,4 @@ const flujoSOS = addKeyword("__FlujoSOS__")
     }
   );
 
-export default flujoSOS;
+export default flujoSOSUnaEstacion;

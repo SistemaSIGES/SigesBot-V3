@@ -4,68 +4,7 @@ import { computers } from "../../api/apiUsuarios.js";
 import { getUsers, computerInfo } from "../../api/apiTickets.js";
 import { computerOptions, opMenuProblemas } from "../../api/apiOpciones.js";
 
-const flujoSoporte = addKeyword("__FlujoSoporte__")
-  .addAction(async (ctx, { provider, state, endFlow, gotoFlow }) => {
-    const clientSelectionResult = await getUsers(state, ctx.from); // getUsers ahora siempre devuelve una cadena o mensaje
-    const clientesDisponibles = await state.get("altaBotuserClientsOptions");
-    if (clientSelectionResult === "No se encontraron clientes asociados.") {
-      await respuesta(
-        ctx.from,
-        provider,
-        clientSelectionResult + " Por favor, contacte a soporte."
-      );
-      return endFlow("Gracias por comuncarte con siges"); // Termina el flujo si no hay clientes
-    } else if (clientesDisponibles.length === 1) {
-      const selectedClient = clientesDisponibles[0];
-      await state.update({ selectedUser: selectedClient });
-      await respuesta(
-        ctx.from,
-        provider,
-        `Incidente reportado para: ${selectedClient.info}`
-      );
-      await state.update({ altaBotuserClientsOptions: null });
-      const { default: flujoSoporteUnaEstacion } = await import("./flujoSoporteUnaEstacion.js");
-      return gotoFlow(flujoSoporteUnaEstacion)
-    } else {
-      // Siempre que haya resultados, se muestra el menú de opciones
-      await respuestaConDelay(
-        ctx.from,
-        provider,
-        `Indique para qué estación quiere dar de alta este usuario (elija un número):\n${clientSelectionResult}`
-      );
-      // El flujo automáticamente pasará al siguiente addAnswer para capturar la selección.
-    }
-  })
-  .addAnswer(
-    "Cargando estaciones...",
-    { capture: true, idle: 200000 },
-    async (ctx, { provider, state, fallBack, gotoFlow }) => {
-      if (ctx?.idleFallBack) {
-        const { default: flujoInactividad } = await import("../flujoInactividad.js");
-        return gotoFlow(flujoInactividad);
-      }
-      const clientesDisponibles = await state.get("altaBotuserClientsOptions");
-      if (clientesDisponibles !== null) {
-        const index = parseInt(ctx.body) - 1;
-
-        if (isNaN(index) || !clientesDisponibles?.[index]) {
-          await respuesta(ctx.from, provider, "Opción inválida.");
-          const clientSelectionResult = await getUsers(state, ctx.from);
-          await respuestaConDelay(
-            ctx.from,
-            provider,
-            `Indique para qué estación quiere dar de alta este usuario (elija un número):\n${clientSelectionResult}`
-          );
-          return fallBack();
-        }
-
-        const selectedClient = clientesDisponibles[index];
-        await state.update({ selectedUser: selectedClient });
-        await respuesta(ctx.from, provider, `Incidente reportado para: ${selectedClient.info}`);
-        await state.update({ altaBotuserClientsOptions: null });
-      }
-    }
-  )
+const flujoSoporteUnaEstacion = addKeyword("__FlujoSoporte__")
   .addAnswer(
     "Elija en que area se encuentra el puesto de trabajo donde necesita soporte\n1. Playa/Boxes\n2. Tienda\n3. Administracion",
     { capture: true, idle: 100000 },
@@ -197,4 +136,4 @@ const flujoSoporte = addKeyword("__FlujoSoporte__")
     }
   );
 
-export default flujoSoporte;
+export default flujoSoporteUnaEstacion;

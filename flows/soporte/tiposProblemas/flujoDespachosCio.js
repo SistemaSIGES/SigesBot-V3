@@ -45,33 +45,30 @@ const flujoDespachosCio = addKeyword("__flujoDespachosCio__", { sensitive: true 
           `Si es posible, en esta sección adjunte una foto con la ID y contraseña de Team Viewer`
         );
       }
-    }
-  )
+    await respuesta(ctx.from, provider, "Si desea adjuntar *IMAGENES* puede enviarlas ahora de una por vez o precionar *0* para continuar.")
+    })
 
-  .addAnswer(
-    "Si desea adjuntar una IMAGEN, envíela ahora. De lo contrario, escriba *0* para continuar.",
-    { capture: true, idle: 200000 },
-    async (ctx, { provider, state, fallBack, gotoFlow }) => {
-      if (ctx?.idleFallBack) {
+    .addAction({ capture: true, idle: 200000 }, async (ctx, { provider, state, fallBack, gotoFlow }) => {
+        if (ctx?.idleFallBack) {
         const { default: flujoInactividad } = await import("../../flujoInactividad.js");
         return gotoFlow(flujoInactividad);
       }
-      const input = ctx.body.toLowerCase().trim();
-      const isImageByCtxType = ctx.hasMedia && ctx.type === "image";
-      const isImageByBodyPattern =
-        typeof ctx.body === "string" && ctx.body.startsWith("_event_media_");
+        const input = ctx.body.toLowerCase().trim();
+        const isImageByCtxType = ctx.hasMedia && ctx.type === 'image';
+        const isImageByBodyPattern = typeof ctx.body === 'string' && ctx.body.startsWith('_event_media_');
 
-      if (isImageByCtxType || isImageByBodyPattern) {
-        await addImage(state, ctx.from, ctx, provider);
-        await respuesta(ctx.from, provider, "Imagen adjuntada.");
-      } else if (input === "0") {
-        await respuesta(ctx.from, provider, "No se adjuntará ninguna imagen.");
-      } else {
-        await respuesta(ctx.from, provider, "Entrada inválida.");
-        return fallBack();
-      }
-    }
-  )
+        if (isImageByCtxType || isImageByBodyPattern) {
+            await addImage(state, ctx.from, ctx, provider);
+            await respuesta(ctx.from, provider, "Imagen adjuntada correctamente. Puede enviar otra o escribir *0* para continuar.");
+            return fallBack();
+        } else if (input === '0') {
+            await respuesta(ctx.from, provider, "Procesando ticket...");
+        } else {
+            await respuesta(ctx.from, provider, "Entrada inválida, por favor envíe una imagen o *0* para continuar");
+            return fallBack();
+        }
+    })
+
 
   .addAnswer(
     "¿Qué nivel de urgencia le daría a este ticket?\n1. Bajo\n2. Medio\n3. Alto",

@@ -4,11 +4,12 @@ import { respuestaConDelay, respuesta } from "../api/apiMensajes.js";
 import { validateUser } from "../api/apiUsuarios.js";
 import { opMenuInicial } from "../api/apiOpciones.js";
 
-const flujoPrincipal = addKeyword("sigesbot")
+const flujoPrincipal = addKeyword("sigesbot", "Sigesbot")
   .addAnswer(
     "Gracias por comunicarte con Sistema SIGES.",
     {},
     async (ctx, { provider, endFlow, state }) => {
+      console.log("Entró al flujoPrincipal con:", ctx.body);
       console.log(ctx);
       const user = await validateUser(state, ctx.from);
       if (!user)

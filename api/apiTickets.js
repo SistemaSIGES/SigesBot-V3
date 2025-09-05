@@ -44,9 +44,13 @@ const addAudio = async (state, from, ctx, provider) => {
   try {
     console.log(`[addAudio] Iniciando descarga de audio para ${from}`);
 
-    // Importar módulos necesarios
     const fs = await import("fs");
     const path = await import("path");
+    const ffmpeg = (await import("fluent-ffmpeg")).default;
+    const ffmpegInstaller = await import("@ffmpeg-installer/ffmpeg");
+
+    // Configurar ffmpeg con el binario instalado
+    ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
     // Crear la carpeta temp si no existe
     const tempDir = "./temp";
@@ -55,27 +59,34 @@ const addAudio = async (state, from, ctx, provider) => {
       console.log(`[addAudio] Carpeta ${tempDir} creada`);
     }
 
-    // Usar provider.saveFile para guardar el archivo de audio
-    const localPath = await provider.saveFile(ctx, { path: "./temp" });
+    // Guardar el archivo con provider
+    const localPath = await provider.saveFile(ctx, { path: tempDir });
 
     if (!localPath) {
       console.warn(`[addAudio] No se pudo guardar el archivo de audio para ${from}.`);
       return;
     }
 
-    // Leer el archivo guardado como buffer
-    const buffer = fs.readFileSync(localPath);
+    // Definir ruta de salida en mp3
+    const mp3Path = path.resolve(tempDir, `audio_${Date.now()}.mp3`);
 
-    // Captura el mimetype del mensaje de audio, si no, usa un valor por defecto
-    const mimeType = ctx.message.audioMessage?.mimetype || "audio/ogg";
-    // Genera un nombre de archivo genérico con timestamp y extensión basada en el mimetype
-    const fileExtension = mimeType.split("/")[1] || "ogg";
-    const filename = `audio_${Date.now()}.${fileExtension}`;
+    // Convertir con ffmpeg
+    await new Promise((resolve, reject) => {
+      ffmpeg(localPath)
+        .toFormat("mp3")
+        .on("end", resolve)
+        .on("error", reject)
+        .save(mp3Path);
+    });
+
+    // Leer archivo convertido
+    const buffer = fs.readFileSync(mp3Path);
+    const filename = path.basename(mp3Path);
 
     const attachment = {
       content: buffer,
       filename: filename,
-      contentType: mimeType,
+      contentType: "audio/mpeg",
     };
 
     let mailAttachments = (await state.get("mailAttachments")) || [];
@@ -83,18 +94,15 @@ const addAudio = async (state, from, ctx, provider) => {
     await state.update({ mailAttachments: mailAttachments });
 
     console.log(
-      `[addAudio] Audio adjuntado: ${filename}, Tipo: ${mimeType}, Tamaño: ${buffer.length} bytes.`
-    );
-    console.log(
-      `[addAudio] mailAttachments en estado después de añadir audio:`,
-      await state.get("mailAttachments")
+      `[addAudio] Audio convertido a MP3: ${filename}, Tamaño: ${buffer.length} bytes.`
     );
 
-    // Limpiar el archivo temporal
+    // Limpiar temporales
     try {
       fs.unlinkSync(localPath);
+      fs.unlinkSync(mp3Path);
     } catch (cleanupError) {
-      console.warn(`[addAudio] No se pudo eliminar el archivo temporal: ${localPath}`);
+      console.warn(`[addAudio] No se pudo eliminar archivos temporales:`, cleanupError);
     }
   } catch (error) {
     console.error(`[addAudio] Error al procesar audio para ${from}:`, error);
@@ -163,96 +171,124 @@ const clearMailAttachments = async (state) => {
 };
 
 const sendProblemTicket = async (state, from) => {
-  const selectedUser = await state.get("selectedUser");
-  const ticketData = (await state.get(from)) || {};
-  console.log("Estado completo antes de construir el ticket:", await state.get(from)); // Log para depuración
+    const selectedUser = await state.get('selectedUser');
+    const ticketData = await state.get(from) || {}; 
+    console.log("Estado completo antes de construir el ticket:", await state.get(from)); // Log para depuración
 
-  if (!selectedUser || !selectedUser.id || !selectedUser.info || !selectedUser.email) {
-    console.error("sendProblemTicket: Información del usuario seleccionada incompleta.");
-    throw new Error("Información del cliente para el ticket incompleta.");
-  }
-
-  // Obtener todos los datos necesarios directamente del estado
-  const area = await state.get("area"); // 'P', 'S', 'A'
-  const problem = await state.get("generalProblem"); // "Apps de Pagos y Fidelizaciones", "Impresora Fiscal / Comandera", etc.
-  const pf = await state.get("pf"); // Punto de facturación / PC (ej. "PC de Mónic - Equipo Principal")
-  const tv = await state.get("tv"); // ID de TeamViewer
-  const typeProblem = await state.get("typeProblem"); // Origen del problema / Solicitud (ej. "App Propia (YVOS-PRIS-ON-BOX-ETC)")
-  const description = (await state.get(from))?.description || "Sin descripción proporcionada"; // Descripción del ticket
-  const priority = (await state.get("priority")) || "1"; // Prioridad del ticket
-  const period = await state.get("period");
-
-  // Construir el subject del ticket de forma dinámica
-  let subjectParts = [];
-  let descParts = [];
-
-  // 1. Área
-  if (area) {
-    let areaName = "";
-    switch (area) {
-      case "P":
-        areaName = "Playa/Boxes";
-        break;
-      case "S":
-        areaName = "Tienda";
-        break;
-      case "A":
-        areaName = "Administración";
-        break;
-      default:
-        areaName = area; // En caso de que 'area' tenga otro valor directo
+    if (!selectedUser || !selectedUser.id || !selectedUser.info || !selectedUser.email) {
+        console.error("sendProblemTicket: Información del usuario seleccionada incompleta.");
+        throw new Error("Información del cliente para el ticket incompleta.");
     }
-    subjectParts.push(areaName);
-  }
 
-  // 2. Info Cliente (Nombre de la estación)
-  if (selectedUser.info) {
-    subjectParts.push(selectedUser.info);
-  }
+    // Obtener todos los datos necesarios directamente del estado
+    const area = await state.get('area'); // 'P', 'S', 'A'
+    const problem = await state.get('generalProblem'); // "Apps de Pagos y Fidelizaciones", "Impresora Fiscal / Comandera", etc.
+    const pf = await state.get('pf'); // Punto de facturación / PC (ej. "PC de Mónic - Equipo Principal")
+    const tv = await state.get('tv'); // ID de TeamViewer
+    const tvalias = await state.get('tvalias');
+    const typeProblem = await state.get('typeProblem'); // Origen del problema / Solicitud (ej. "App Propia (YVOS-PRIS-ON-BOX-ETC)")
+    const description = (await state.get(from))?.description || 'Sin descripción proporcionada'; // Descripción del ticket
+    const priority = await state.get('priority') || '1'; // Prioridad del ticket
+    const period = await state.get('period'); 
 
-  // 5. Problema General (generalProblem)
-  if (problem) {
-    descParts.push(`El problema que se reporta es con respecto a: ${problem}`);
-  }
+    // Construir el subject del ticket de forma dinámica
+    let subjectParts = [];
+    let descParts = [];
 
-  // 6. Tipo de Problema Específico (typeProblem)
-  if (typeProblem) {
-    descParts.push(`En particular referido a: ${typeProblem}`);
-  }
+    // 1. Área
+    if (area) {
+        let areaName = '';
+        switch (area) {
+            case 'P': areaName = 'Playa/Boxes'; break;
+            case 'S': areaName = 'Tienda'; break;
+            case 'A': areaName = 'Administración'; break;
+            default: areaName = area; // En caso de que 'area' tenga otro valor directo
+        }
+        subjectParts.push(areaName);
+    }
+    descParts.push(`Datos del Ticket`);
 
-  if (period) {
-    descParts.push(`El periodo del problema del libro de Iva es: ${period}`);
-  }
+    
+    if (selectedUser.info) {
+        subjectParts.push(selectedUser.info);
+    }
+    
 
-  if (pf && pf !== "PC no esta en nuestra base de datos") {
-    descParts.push(`La PC que presenta el problema es: ${pf}`);
-  }
+    
+    if (problem) {
+        descParts.push(`Soporte para: ${problem}`);
+    }
 
-  // 4. ID TeamViewer (tv) - Opcional, si quieres incluirlo en el subject
-  if (tv && tv !== "tv") {
-    // 'tv' es un placeholder si no se encuentra
-    descParts.push(`TeamViewer: ${tv}`);
-  }
+    if (period) {
+        descParts.push(`El periodo del problema del libro de Iva es: ${period}`);
+    }
+    if (selectedUser.id) {
+        descParts.push(`ID Cliente: ${selectedUser.id}`);
+    }
+    if (selectedUser.info) {
+        descParts.push(`Info del cliente: ${selectedUser.info}`);
+    }
+    if (from) {
+        descParts.push(`Telefono que generó el ticket: ${from}`);
+    }
 
-  if (description) {
-    descParts.push(`La descripción dada por el cliente es: ${description}`);
-  }
+    if (pf && pf !== "PC no esta en nuestra base de datos") {
+        descParts.push(`Punto de facturación / PC: ${pf}`);
+    }
 
-  // Unir las partes del subject, usando un fallback si no hay suficientes datos
-  const subject =
-    subjectParts.length > 0
-      ? subjectParts.join(" - ")
-      : `${selectedUser.info || "Cliente Desconocido"} - Problema sin especificar`;
-  const descriptionFinal = descParts.join("<br>");
-  const form = new FormData();
+    
+    if (tv && tv !== "tv") {
+        descParts.push(`ID TeamViewer: ${tv}`);
+    }
 
-  form.append("subject", subject);
-  form.append("description", descriptionFinal);
-  form.append("email", selectedUser.email);
-  form.append("priority", priority);
-  form.append("status", "2"); // Abierto
-  form.append("type", "Incidente"); // Tipo de ticket en Freshdesk
-  form.append("custom_fields[cf_recibido_por]", "Bot");
+    if (tvalias && tvalias !== "tvalias") {
+        descParts.push(`Alias de TeamViewer: ${tvalias}`);
+    }
+
+    let priorityText = '';
+    switch (priority) {
+        case '1':
+            priorityText = 'Baja';
+            break;
+        case '2':
+            priorityText = 'Media';
+            break;
+        case '3':
+            priorityText = 'Alta';
+            break;
+        case '4':
+            priorityText = 'Urgente';
+            break;
+        default:
+            priorityText = 'No especificada';
+            break;
+    }
+
+    if (priorityText && priorityText !== "") {
+        descParts.push(`Urgencia indicada por el cliente: ${priorityText}`);
+    }
+
+    if (description) {
+        descParts.push(`La descripción del problema: ${description}`);
+    }
+   
+    if (typeProblem) {
+        descParts.push(`Origen del problema: ${typeProblem}`);
+    }
+
+
+    // Unir las partes del subject, usando un fallback si no hay suficientes datos
+    const subject = subjectParts.length > 0 ? subjectParts.join(' - ') : `${selectedUser.info || 'Cliente Desconocido'} - Problema sin especificar`;
+    const descriptionFinal = descParts.join('<br>');
+    const form = new FormData();
+
+    form.append('subject', subject);
+    form.append('description', descriptionFinal);
+    form.append('email', selectedUser.email);
+    form.append('priority', '1');
+    form.append('status', '2'); // Abierto
+    form.append('type', 'Incidente'); // Tipo de ticket en Freshdesk
+    form.append('custom_fields[cf_recibido_por]', 'Bot');
 
   // Procesar campos personalizados si los hubiera (mantener como está)
   if (ticketData.custom_fields) {
