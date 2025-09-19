@@ -3,7 +3,7 @@ import axios from "axios";
 const validateUser = async (state, from) => {
   const currentState = await state.getMyState(from);
   if (!currentState) {
-    await state.update(from, {}); // 👈 Esto asegura que exista
+    await state.update(from, {}); 
   }
   const config = {
     method: "get",
@@ -89,9 +89,10 @@ const altaBotuser = async (state) => {
     data: newBotuser,
   };
 
-  const result = await axios(config).then((i) => i.data);
+  await axios(config).then((i) => i.data);
 };
-// Esta función es una adaptación de newUserInfo para usar state.get directamente
+
+
 const buildNewUserInfoSummary = async (state) => {
   const newUser = (await state.get("newBotuser")) || {};
 
@@ -114,7 +115,7 @@ const buildNewUserInfoSummary = async (state) => {
       Area: newUser.area ? areaMapping[newUser.area] : "No especificado",
       Correo: newUser.email || "No especificado",
     }),
-    // Asegúrate de que el clientId siempre esté presente si ya se seleccionó
+    
     "Cliente Asociado (ID)": newUser.clientId || "N/A",
   };
 

@@ -6,7 +6,7 @@ import { computerOptions, opMenuProblemas } from "../../api/apiOpciones.js";
 
 const flujoSoporte = addKeyword("__FlujoSoporte__")
   .addAction(async (ctx, { provider, state, endFlow, gotoFlow }) => {
-    const clientSelectionResult = await getUsers(state, ctx.from); // getUsers ahora siempre devuelve una cadena o mensaje
+    const clientSelectionResult = await getUsers(state, ctx.from); 
     const clientesDisponibles = await state.get("altaBotuserClientsOptions");
     if (clientSelectionResult === "No se encontraron clientes asociados.") {
       await respuesta(
@@ -14,7 +14,7 @@ const flujoSoporte = addKeyword("__FlujoSoporte__")
         provider,
         clientSelectionResult + " Por favor, contacte a soporte."
       );
-      return endFlow("Gracias por comuncarte con siges"); // Termina el flujo si no hay clientes
+      return endFlow(`Escriba *sigesbot* para volver a comenzar`);
     } else if (clientesDisponibles.length === 1) {
       const selectedClient = clientesDisponibles[0];
       await state.update({ selectedUser: selectedClient });

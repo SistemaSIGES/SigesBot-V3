@@ -126,8 +126,7 @@ const flujoSiges = addKeyword("__flujoSiges__", { sensitive: true })
       }
       const selectedUser = await state.get("selectedUser"); // Obtener selectedUser del estado
       if (selectedUser && selectedUser.testing === true) {
-        // Verificar si el campo 'testing' es true
-        const ticketSummary = await buildTicketSummaryMessage(state, ctx.from); // Llama a la nueva función
+        const ticketSummary = await buildTicketSummaryMessage(state, ctx.from);
         await respuesta(ctx.from, provider, ticketSummary); // Envía el resumen al usuario
         await respuesta(ctx.from, provider, "Escriba *sigesbot* para volver a comenzar");
         return endFlow();

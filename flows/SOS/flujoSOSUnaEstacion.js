@@ -1,16 +1,10 @@
 import { addKeyword } from "@builderbot/bot";
-import { respuesta, respuestaConDelay } from "../../api/apiMensajes.js";
-import {
-  getUsers,
-  sendSosTicket,
-  addAudio,
-  addImage,
-  buildTicketSummaryMessage,
-} from "../../api/apiTickets.js";
+import { respuesta } from "../../api/apiMensajes.js";
+import {sendSosTicket, addAudio, addImage, buildTicketSummaryMessage} from "../../api/apiTickets.js";
 
 const flujoSOSUnaEstacion = addKeyword("__FlujoSOS__")
   .addAnswer(
-    "Ahora, por favor, escriba una breve descripción del incidente o envíe un AUDIO explicando el mismo.", // Descripción puede ser texto o audio
+    "Ahora, por favor, escriba una breve descripción del incidente o envíe un AUDIO explicando el mismo.",
     { capture: true, idle: 1000000 },
     async (ctx, { state, fallBack, provider, gotoFlow }) => {
       if (ctx?.idleFallBack) {
@@ -70,13 +64,12 @@ const flujoSOSUnaEstacion = addKeyword("__FlujoSOS__")
         return fallBack()
       } else if (input === "0") {
         await respuesta(ctx.from, provider, "Procesando ticket...");
-        const selectedUser = await state.get("selectedUser"); // Obtener selectedUser del estado
+        const selectedUser = await state.get("selectedUser"); 
       if (selectedUser && selectedUser.testing === true) {
-        // Verificar si el campo 'testing' es true
         await state.update({ priority: "4" });
         await state.update({ generalProblem: "*Ticket SOS*" });
-        const ticketSummary = await buildTicketSummaryMessage(state, ctx.from); // Llama a la nueva función
-        await respuesta(ctx.from, provider, ticketSummary); // Envía el resumen al usuario
+        const ticketSummary = await buildTicketSummaryMessage(state, ctx.from); 
+        await respuesta(ctx.from, provider, ticketSummary); 
         await respuesta(ctx.from, provider, "Escriba *sigesbot* para volver a comenzar");
         return endFlow();
       }

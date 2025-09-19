@@ -63,7 +63,8 @@ const flujoAltaBotuser = addKeyword("__AltaBotUser__")
           provider,
           clientSelectionResult + " Por favor, contacte a soporte."
         );
-        return endFlow("Gracias por comuncarte con siges"); // Termina el flujo si no hay clientes
+        
+        return endFlow(`Escriba *sigesbot* para volver a comenzar`);
       } else if (clientesDisponibles.length === 1) {
         const selectedClient = clientesDisponibles[0];
         const currentNewBotuser = await state.get("newBotuser");
@@ -93,7 +94,6 @@ const flujoAltaBotuser = addKeyword("__AltaBotUser__")
     }
   )
   .addAnswer(
-    // Este addAnswer captura la selección del cliente (siempre será este paso ahora)
     "Cargando estaciones...",
     { capture: true, idle: 200000 },
     async (ctx, { provider, state, fallBack, gotoFlow }) => {

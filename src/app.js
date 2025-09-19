@@ -1,4 +1,4 @@
-import "dotenv/config"; // ¡Esta línea debe ir primero!
+import "dotenv/config"; 
 import { createBot, createProvider, createFlow } from "@builderbot/bot";
 import { BaileysProvider as Provider } from "@builderbot/provider-baileys";
 import { MemoryDB } from "@builderbot/bot";
@@ -56,7 +56,6 @@ const main = async () => {
   });
 
   httpServer(PORT);
-  // Manejar Ctrl+C
   process.on('SIGINT', () => {
   console.log('\nBot detenido manualmente');
   process.exit(0);

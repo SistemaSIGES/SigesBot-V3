@@ -232,7 +232,7 @@ const sendProblemTicket = async (state, from) => {
         descParts.push(`Telefono que generó el ticket: ${from}`);
     }
 
-    if (pf && pf !== "PC no esta en nuestra base de datos") {
+    if (pf && pf !== "pf") {
         descParts.push(`Punto de facturación / PC: ${pf}`);
     }
 
@@ -324,7 +324,7 @@ const sendProblemTicket = async (state, from) => {
     });
   }
 
-  // Enviar a backend (mantener como está)
+  // Enviar a backend
   const staticApiKey = process.env.BACKEND_STATIC_API_KEY;
   if (!staticApiKey) {
     throw new Error("No se encontró BACKEND_STATIC_API_KEY en las variables de entorno.");
@@ -413,9 +413,7 @@ const sendSosTicket = async (state, from) => {
         }, content.length=${attachment.content ? attachment.content.length : "N/A"}`
       );
       if (attachment.content instanceof Buffer && attachment.filename && attachment.contentType) {
-        // *** ¡¡¡ASEGÚRATE DE QUE ESTA LÍNEA NO TENGA LOS CORCHETES [] EN 'uploads'!!! ***
         form.append("uploads", attachment.content, {
-          // <--- ¡¡¡CAMBIO CLAVE AQUÍ!!!
           filename: attachment.filename,
           contentType: attachment.contentType,
           knownLength: attachment.content.length,
@@ -462,7 +460,7 @@ const sendSosTicket = async (state, from) => {
   }
 };
 
-// getUsers: Adaptada para usar state.get y state.update, y replicar el comportamiento original
+
 const getUsers = async (state) => {
   const users = (await state.get("users")) || [];
 
@@ -482,7 +480,7 @@ const buildTicketSummaryMessage = async (state, from) => {
   const ticketData = (await state.get(from)) || {}; // Datos específicos del ticket (descripción, prioridad)
 
   const area = await state.get("area");
-  const areaName = await state.get("areaName"); // Asumo que el nombre completo del área se guarda en el estado
+  const areaName = await state.get("areaName"); 
   const generalProblem = await state.get("generalProblem");
   const typeProblem = await state.get("typeProblem");
   const pf = await state.get("pf");
@@ -491,7 +489,7 @@ const buildTicketSummaryMessage = async (state, from) => {
   const periodo = await state.get("period");
   const priority = (await state.get("priority")) || "1"; // Prioridad del ticket
 
-  // Mapeo de códigos de área a nombres
+  // Mapeo de códigos de campos
   let displayArea = areaName;
   if (!displayArea && area) {
     switch (area) {

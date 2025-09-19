@@ -9,7 +9,6 @@ const flujoInstructivosArchivos = addKeyword("__FlujoInstructivos__")
     null,
     async (ctx, { provider, state, gotoFlow }) => {
       const archivos = await state.get("instructivosArchivos");
-
       // Si no hay archivos o la lista está vacía, redirige a categorías
       if (!archivos || !Array.isArray(archivos) || archivos.length === 0) {
         await respuesta(
@@ -22,11 +21,9 @@ const flujoInstructivosArchivos = addKeyword("__FlujoInstructivos__")
         );
         return gotoFlow(flujoInstructivosCategorias);
       }
-
       // Construye la lista de opciones de archivos
       const opcionesArchivos = archivos
         .map((archivo, i) => {
-          // Limpiamos el nombre de cualquier prefijo numérico (ej: "1. Mi Archivo" -> "Mi Archivo")
           const nombreLimpio = archivo.name.replace(/^\d+\.\s*/, "");
           return `${i + 1}. ${nombreLimpio}`;
         })
@@ -34,14 +31,13 @@ const flujoInstructivosArchivos = addKeyword("__FlujoInstructivos__")
 
       // Construye el menú completo con las nuevas opciones
       const menuCompleto =
-        `*0*. Volver a Carpetas\n` + // Nueva opción: Volver a categorías
+        `*0*. Volver a Carpetas\n` + 
         `${opcionesArchivos}\n` +
-        `*Salir*. Volver al Menú Principal`; // Nueva opción: Volver al menú principal
+        `*Salir*. Volver al Menú Principal`;
 
       await respuesta(ctx.from, provider, menuCompleto);
     }
   )
-  // Este addAction captura la respuesta del usuario y maneja toda la lógica
   .addAction(
     { capture: true, idle: 200000 },
     async (ctx, { provider, state, fallBack, gotoFlow }) => {
@@ -53,7 +49,6 @@ const flujoInstructivosArchivos = addKeyword("__FlujoInstructivos__")
       const archivos = await state.get("instructivosArchivos"); // Obtiene los archivos del estado
       const opcionesArchivos = archivos
         .map((archivo, i) => {
-          // Limpiamos el nombre de cualquier prefijo numérico (ej: "1. Mi Archivo" -> "Mi Archivo")
           const nombreLimpio = archivo.name.replace(/^\d+\.\s*/, "");
           return `${i + 1}. ${nombreLimpio}`;
         })
@@ -101,5 +96,5 @@ const flujoInstructivosArchivos = addKeyword("__FlujoInstructivos__")
     }
   );
 
-// Exporta solo el flujo unificado
+
 export default flujoInstructivosArchivos;

@@ -1,11 +1,8 @@
 import { addKeyword } from "@builderbot/bot";
-
-// Importar funciones adaptadas para usar 'state'
-import { getUsers } from "../../api/apiTickets.js"; // getInstructivo, getBandera, etc.
 import { buildNewUserInfoSummary } from "../../api/apiUsuarios.js";
-import { respuesta, respuestaConDelay } from "../../api/apiMensajes.js";
+import { respuesta } from "../../api/apiMensajes.js";
 
-// Importa el flujo principal para regresar a él (asegúrate de que este path sea correcto)
+
 const flujoAltaBotUserUnaEstacion = addKeyword("__AltaBotUser__")
   .addAnswer(
     "Este usuario podrá dar de alta a nuevos usuarios ?\n1. SI\n2. NO",

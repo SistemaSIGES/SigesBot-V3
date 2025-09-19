@@ -1,7 +1,7 @@
 import { addKeyword } from "@builderbot/bot";
 import { respuesta, respuestaConDelay } from "../../api/apiMensajes.js";
 import { computers } from "../../api/apiUsuarios.js";
-import { getUsers, computerInfo } from "../../api/apiTickets.js";
+import { computerInfo } from "../../api/apiTickets.js";
 import { computerOptions, opMenuProblemas } from "../../api/apiOpciones.js";
 
 const flujoSoporteUnaEstacion = addKeyword("__FlujoSoporte__")

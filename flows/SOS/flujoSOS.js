@@ -20,7 +20,7 @@ const flujoSOS = addKeyword("__FlujoSOS__")
       }
 
       if (input === "1") {
-        const clientSelectionResult = await getUsers(state, ctx.from); // getUsers ahora siempre devuelve una cadena o mensaje
+        const clientSelectionResult = await getUsers(state, ctx.from);
         const clientesDisponibles = await state.get("altaBotuserClientsOptions");
         if (clientSelectionResult === "No se encontraron clientes asociados.") {
           await respuesta(
@@ -28,7 +28,7 @@ const flujoSOS = addKeyword("__FlujoSOS__")
             provider,
             clientSelectionResult + " Por favor, contacte a soporte."
           );
-          return endFlow("Gracias por comuncarte con siges"); // Termina el flujo si no hay clientes
+          return endFlow(`Escriba *sigesbot* para volver a comenzar`);
         } else if (clientesDisponibles.length === 1) {
           const selectedClient = clientesDisponibles[0];
           await state.update({ selectedUser: selectedClient });
@@ -97,7 +97,7 @@ const flujoSOS = addKeyword("__FlujoSOS__")
     }
   )
   .addAnswer(
-    "Ahora, por favor, escriba una breve descripción del incidente o envíe un AUDIO explicando el mismo.", // Descripción puede ser texto o audio
+    "Ahora, por favor, escriba una breve descripción del incidente o envíe un AUDIO explicando el mismo.",
     { capture: true, idle: 1000000 },
     async (ctx, { state, fallBack, provider, gotoFlow }) => {
       if (ctx?.idleFallBack) {
@@ -105,7 +105,7 @@ const flujoSOS = addKeyword("__FlujoSOS__")
         return gotoFlow(flujoInactividad);
       }
       let descriptionText = "";
-      // Detectar audio de forma robustaf
+      // Detectar audio
       const isAudioByCtxType = ctx.hasMedia && ctx.type === "audio";
       const isAudioByBodyPattern =
         typeof ctx.body === "string" && ctx.body.startsWith("_event_voice_note_");
@@ -158,13 +158,12 @@ const flujoSOS = addKeyword("__FlujoSOS__")
         return fallBack()
       } else if (input === "0") {
         await respuesta(ctx.from, provider, "Procesando ticket...");
-        const selectedUser = await state.get("selectedUser"); // Obtener selectedUser del estado
+        const selectedUser = await state.get("selectedUser");
       if (selectedUser && selectedUser.testing === true) {
-        // Verificar si el campo 'testing' es true
         await state.update({ priority: "4" });
         await state.update({ generalProblem: "*Ticket SOS*" });
-        const ticketSummary = await buildTicketSummaryMessage(state, ctx.from); // Llama a la nueva función
-        await respuesta(ctx.from, provider, ticketSummary); // Envía el resumen al usuario
+        const ticketSummary = await buildTicketSummaryMessage(state, ctx.from); 
+        await respuesta(ctx.from, provider, ticketSummary); 
         await respuesta(ctx.from, provider, "Escriba *sigesbot* para volver a comenzar");
         return endFlow();
       }

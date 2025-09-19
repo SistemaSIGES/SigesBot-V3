@@ -14,11 +14,16 @@ const flujoConfirmacionAlta = addKeyword("_confirmaciónUsuario__").addAnswer(
     switch (input) {
       case "1":
         try {
-          await altaBotuser(state); // altaBotuser ahora recibe solo state
+          await altaBotuser(state); 
           await respuesta(
             ctx.from,
             provider,
-            "Usuario creado exitosamente\nEscriba *sigesbot* para volver a comenzar"
+            "Usuario creado exitosamente"
+          );
+          await respuesta(
+            ctx.from,
+            provider,
+            "Escriba *sigesbot* para volver a comenzar"
           );
           await state.update({ newBotuser: null }); // Limpiar el estado del usuario dado de alta
           return endFlow();
@@ -41,11 +46,16 @@ const flujoConfirmacionAlta = addKeyword("_confirmaciónUsuario__").addAnswer(
 
       case "3": {
         try {
-          await altaBotuser(state); // altaBotuser ahora recibe solo state
+          await altaBotuser(state);
           await respuesta(
             ctx.from,
             provider,
-            "Usuario creado exitosamente\nA continuación daremos de alta a un nuevo usuario"
+            "Usuario creado exitosamente"
+          );
+          await respuesta(
+            ctx.from,
+            provider,
+            "A continuación daremos de alta a un nuevo usuario"
           );
           await state.update({ newBotuser: {} }); // Limpia el estado para el nuevo usuario
           const { default: flujoAltaBotUser } = await import("./flujoAltaBotUser.js");
@@ -77,7 +87,7 @@ const flujoConfirmacionAlta = addKeyword("_confirmaciónUsuario__").addAnswer(
           provider,
           "Opción inválida. Por favor, seleccione una opción válida."
         );
-        return fallBack(); // Vuelve a pedir la opción de confirmación
+        return fallBack();
       }
     }
   }
