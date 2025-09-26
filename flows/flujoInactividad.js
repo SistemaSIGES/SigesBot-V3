@@ -3,7 +3,6 @@ import { respuesta } from "../api/apiMensajes.js";
 
 const flujoInactividad = addKeyword(["__FlujoInactividad__"]).addAnswer(
   "Parece que has estado inactivo por demasiado tiempo. 😴",
-  null,
   async (ctx, { provider, endFlow }) => {
     await respuesta(
       ctx.from,
