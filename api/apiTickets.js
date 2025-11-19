@@ -290,22 +290,45 @@ const sendProblemTicket = async (state, from) => {
     form.append('type', 'Incidente'); // Tipo de ticket en Freshdesk
     form.append('custom_fields[cf_recibido_por]', 'Bot');
 
-  // Procesar campos personalizados si los hubiera (mantener como está)
-  if (ticketData.custom_fields) {
-    try {
-      const parsedCustomFields =
-        typeof ticketData.custom_fields === "string"
-          ? JSON.parse(ticketData.custom_fields)
-          : ticketData.custom_fields;
-      for (const key in parsedCustomFields) {
-        if (Object.prototype.hasOwnProperty.call(parsedCustomFields, key)) {
-          form.append(`custom_fields[${key}]`, parsedCustomFields[key]);
-        }
-      }
-    } catch (err) {
-      console.error("Error al parsear custom_fields para Freshdesk:", err);
-    }
+  if (selectedUser.cc_emails) {
+  let emailsToProcess = selectedUser.cc_emails;
+
+  if (typeof emailsToProcess === "string") {
+    emailsToProcess = [emailsToProcess.replace(/[{}]/g, '')];
+  } else if (Array.isArray(emailsToProcess)) {
+    emailsToProcess = emailsToProcess.map(item =>
+      (typeof item === 'string' ? item.replace(/[{}]/g, '') : item)
+    );
+  } else {
+    emailsToProcess = [];
   }
+
+  let ccList = [];
+  emailsToProcess.forEach(item => {
+    if (typeof item === 'string' && item.includes(',')) {
+      ccList.push(...item.split(',').map(x => x.trim()));
+    } else if (typeof item === 'string' && item.length > 0) {
+      ccList.push(item.trim());
+    }
+  });
+
+  const validCcList = ccList.filter(email =>
+    typeof email === 'string' && email.includes('@') && email.trim().length > 0
+  );
+
+  console.log("DEBUG: ccList generada (con limpieza):", validCcList);
+
+  if (validCcList.length > 0) {
+    validCcList.forEach(email => {
+      form.append("cc_emails", email);
+      console.log("✅ Ejecutivos CC añadidos:", email);
+    });
+  } else {
+    console.log("ℹ️ No hay correos válidos para cc_emails");
+  }
+} else {
+  console.log("ℹ️ Este cliente no tiene campo cc_emails definido");
+}
 
   // Adjuntar archivos (audio, imágenes, etc.) (mantener como está)
   const mailAttachments = await state.get("mailAttachments");
@@ -345,6 +368,7 @@ const sendProblemTicket = async (state, from) => {
 
     console.log("[sendProblemTicket] Ticket creado con éxito:", response.data);
     await clearMailAttachments(state);
+    triggerAutomaticReply(response.data.ticket.id);
     await state.update({ period: undefined });
     return response.data.ticket.id;
   } catch (error) {
@@ -381,7 +405,46 @@ const sendSosTicket = async (state, from) => {
   form.append("status", "2");
   form.append("type", "Incidente");
   form.append("custom_fields[cf_recibido_por]", "Bot");
+  if (selectedUser.cc_emails) {
+  let emailsToProcess = selectedUser.cc_emails;
 
+  if (typeof emailsToProcess === "string") {
+    emailsToProcess = [emailsToProcess.replace(/[{}]/g, '')];
+  } else if (Array.isArray(emailsToProcess)) {
+    emailsToProcess = emailsToProcess.map(item =>
+      (typeof item === 'string' ? item.replace(/[{}]/g, '') : item)
+    );
+  } else {
+    emailsToProcess = [];
+  }
+
+  let ccList = [];
+  emailsToProcess.forEach(item => {
+    if (typeof item === 'string' && item.includes(',')) {
+      ccList.push(...item.split(',').map(x => x.trim()));
+    } else if (typeof item === 'string' && item.length > 0) {
+      ccList.push(item.trim());
+    }
+  });
+
+  const validCcList = ccList.filter(email =>
+    typeof email === 'string' && email.includes('@') && email.trim().length > 0
+  );
+
+  console.log("DEBUG: ccList generada (con limpieza):", validCcList);
+
+  if (validCcList.length > 0) {
+    validCcList.forEach(email => {
+      form.append("cc_emails", email);
+      console.log("✅ Ejecutivos CC añadidos:", email);
+    });
+  } else {
+    console.log("ℹ️ No hay correos válidos para cc_emails");
+  }
+} else {
+  console.log("ℹ️ Este cliente no tiene campo cc_emails definido");
+}
+  
   if (ticketData.custom_fields) {
     try {
       const parsedCustomFields =
@@ -452,6 +515,7 @@ const sendSosTicket = async (state, from) => {
     const response = await axios(config);
     console.log("Ticket SOS creado en Freshdesk a través del backend:", response.data);
     await clearMailAttachments(state);
+    triggerAutomaticReply(response.data.ticket.id);
     return response.data.ticket.id;
   } catch (error) {
     console.error(
@@ -490,6 +554,35 @@ const buildTicketSummaryMessage = async (state, from) => {
   const mailAttachments = await state.get("mailAttachments");
   const periodo = await state.get("period");
   const priority = (await state.get("priority")) || "1"; // Prioridad del ticket
+
+  let ccEmails = [];
+    if (selectedUser?.cc_emails) {
+      let emailsToProcess = selectedUser.cc_emails;
+      
+      // 1. Limpiar llaves {} y garantizar que sea un array para iterar
+      if (typeof emailsToProcess === "string") {
+          emailsToProcess = [emailsToProcess.replace(/[{}]/g, '')]; 
+      } else if (Array.isArray(emailsToProcess)) {
+          emailsToProcess = emailsToProcess.map(item => 
+              (typeof item === 'string' ? item.replace(/[{}]/g, '') : item)
+          );
+      } else {
+          emailsToProcess = [];
+      }
+      
+      let ccList = [];
+      // 2. Iterar y desglosar si un elemento del array contiene comas
+      emailsToProcess.forEach(item => {
+          if (typeof item === 'string' && item.includes(',')) {
+              ccList.push(...item.split(',').map(x => x.trim()));
+          } else if (typeof item === 'string' && item.length > 0) {
+              ccList.push(item.trim());
+          }
+      });
+
+      // 3. Filtrar correos válidos
+      ccEmails = ccList.filter(email => typeof email === 'string' && email.includes('@') && email.trim().length > 0);
+    }
 
   // Mapeo de códigos de área a nombres
   let displayArea = areaName;
@@ -545,6 +638,9 @@ const buildTicketSummaryMessage = async (state, from) => {
   if (periodo) {
     summary += `*Periodo:* ${periodo}\n`;
   }
+  summary += `*CC a Notificar:* ${
+        ccEmails.length > 0 ? ccEmails.join(", ") : "Ninguno"
+    }\n`;
   summary += `*Adjuntos:* ${
     mailAttachments && mailAttachments.length > 0
       ? mailAttachments.length + " archivo(s)"
@@ -554,6 +650,41 @@ const buildTicketSummaryMessage = async (state, from) => {
   await clearMailAttachments(state);
   await state.update({ period: undefined });
   return summary;
+};
+
+const triggerAutomaticReply = (ticketId) => {
+    if (!process.env.SERVER_URL || !process.env.BACKEND_STATIC_API_KEY) {
+        console.error("triggerAutomaticReply: SERVER_URL o BACKEND_STATIC_API_KEY no están configurados.");
+        return;
+    }
+
+    const replyEndpointUrl = `${process.env.SERVER_URL}/freshdesk/tickets/${ticketId}/reply`;
+
+    const replyConfig = {
+        method: "post",
+        url: replyEndpointUrl,
+        headers: {
+            "Content-Type": "application/json",
+            // Usamos la API Key estática para autenticar la llamada interna entre bot y backend
+            "X-API-Key": process.env.BACKEND_STATIC_API_KEY, 
+        },
+        data: {}, // No necesitamos enviar datos si el mensaje es por defecto
+    };
+
+    // Disparamos la llamada sin esperar el resultado
+    axios(replyConfig)
+        .then(replyResponse => {
+            console.log(`✅ Respuesta automática disparada para Ticket ID: ${ticketId}`);
+        })
+        .catch(replyError => {
+            // Registramos la advertencia pero el ticket principal ya fue creado exitosamente
+            const errorMsg = replyError.response 
+                ? JSON.stringify(replyError.response.data) 
+                : replyError.message;
+            console.warn(
+                `⚠️ Advertencia: Fallo al enviar la respuesta automática interna para Ticket ID: ${ticketId}. Error: ${errorMsg}`
+            );
+        });
 };
 
 export {
