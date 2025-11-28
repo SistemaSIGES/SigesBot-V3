@@ -286,8 +286,8 @@ const sendProblemTicket = async (state, from) => {
     form.append('description', descriptionFinal);
     form.append('email', selectedUser.email);
     form.append('priority', '1');
-    form.append('status', '2'); // Abierto
-    form.append('type', 'Incidente'); // Tipo de ticket en Freshdesk
+    form.append('status', '2'); 
+    form.append('type', 'Incidente'); 
     form.append('custom_fields[cf_recibido_por]', 'Bot');
 
   if (selectedUser.cc_emails) {
@@ -297,7 +297,7 @@ const sendProblemTicket = async (state, from) => {
     emailsToProcess = [emailsToProcess.replace(/[{}]/g, '')];
   } else if (Array.isArray(emailsToProcess)) {
     emailsToProcess = emailsToProcess.map(item =>
-      (typeof item === 'string' ? item.replace(/[{}]/g, '') : item)
+      (typeof item === "string" ? item.replace(/[{}]/g, "") : item)
     );
   } else {
     emailsToProcess = [];
@@ -305,30 +305,52 @@ const sendProblemTicket = async (state, from) => {
 
   let ccList = [];
   emailsToProcess.forEach(item => {
-    if (typeof item === 'string' && item.includes(',')) {
-      ccList.push(...item.split(',').map(x => x.trim()));
-    } else if (typeof item === 'string' && item.length > 0) {
+    if (typeof item === "string" && item.includes(",")) {
+      ccList.push(...item.split(",").map(x => x.trim()));
+    } else if (typeof item === "string" && item.length > 0) {
       ccList.push(item.trim());
     }
   });
 
-  const validCcList = ccList.filter(email =>
-    typeof email === 'string' && email.includes('@') && email.trim().length > 0
+  // correos válidos desde cc_emails
+  let validCcList = ccList.filter(
+    email => typeof email === "string" && email.includes("@") && email.trim().length > 0
   );
 
-  console.log("DEBUG: ccList generada (con limpieza):", validCcList);
+  // 🔥 Agregar vipmail si corresponde
+  const vipMail = selectedUser.vipmail;
+  const isVip = selectedUser.vip === true || selectedUser.vip === "true";
 
-  if (validCcList.length > 0) {
-    validCcList.forEach(email => {
+  if (isVip && vipMail && typeof vipMail === "string" && vipMail.includes("@")) {
+    validCcList.push(vipMail);
+    console.log("⭐ vipmail añadido a CC:", vipMail);
+  }
+
+  // eliminar duplicados
+  const uniqueCcList = [...new Set(validCcList)];
+
+  console.log("DEBUG: ccList generada (con limpieza + vipmail):", uniqueCcList);
+
+  if (uniqueCcList.length > 0) {
+    uniqueCcList.forEach(email => {
       form.append("cc_emails", email);
-      console.log("✅ Ejecutivos CC añadidos:", email);
+      console.log("✅ CC añadido:", email);
     });
   } else {
     console.log("ℹ️ No hay correos válidos para cc_emails");
   }
 } else {
   console.log("ℹ️ Este cliente no tiene campo cc_emails definido");
+
+  // Aunque no tenga cc_emails, si es VIP igual mandamos vipmail
+  const vipMail = selectedUser.vipmail;
+  const isVip = selectedUser.vip === true || selectedUser.vip === "true";
+  if (isVip && vipMail && typeof vipMail === "string" && vipMail.includes("@")) {
+    form.append("cc_emails", vipMail);
+    console.log("⭐ vipmail añadido a CC (sin otros cc_emails):", vipMail);
+  }
 }
+
 
   // Adjuntar archivos (audio, imágenes, etc.) (mantener como está)
   const mailAttachments = await state.get("mailAttachments");
@@ -405,6 +427,7 @@ const sendSosTicket = async (state, from) => {
   form.append("status", "2");
   form.append("type", "Incidente");
   form.append("custom_fields[cf_recibido_por]", "Bot");
+
   if (selectedUser.cc_emails) {
   let emailsToProcess = selectedUser.cc_emails;
 
@@ -412,7 +435,7 @@ const sendSosTicket = async (state, from) => {
     emailsToProcess = [emailsToProcess.replace(/[{}]/g, '')];
   } else if (Array.isArray(emailsToProcess)) {
     emailsToProcess = emailsToProcess.map(item =>
-      (typeof item === 'string' ? item.replace(/[{}]/g, '') : item)
+      (typeof item === "string" ? item.replace(/[{}]/g, "") : item)
     );
   } else {
     emailsToProcess = [];
@@ -420,30 +443,52 @@ const sendSosTicket = async (state, from) => {
 
   let ccList = [];
   emailsToProcess.forEach(item => {
-    if (typeof item === 'string' && item.includes(',')) {
-      ccList.push(...item.split(',').map(x => x.trim()));
-    } else if (typeof item === 'string' && item.length > 0) {
+    if (typeof item === "string" && item.includes(",")) {
+      ccList.push(...item.split(",").map(x => x.trim()));
+    } else if (typeof item === "string" && item.length > 0) {
       ccList.push(item.trim());
     }
   });
 
-  const validCcList = ccList.filter(email =>
-    typeof email === 'string' && email.includes('@') && email.trim().length > 0
+  // correos válidos desde cc_emails
+  let validCcList = ccList.filter(
+    email => typeof email === "string" && email.includes("@") && email.trim().length > 0
   );
 
-  console.log("DEBUG: ccList generada (con limpieza):", validCcList);
+  // 🔥 Agregar vipmail si corresponde
+  const vipMail = selectedUser.vipmail;
+  const isVip = selectedUser.vip === true || selectedUser.vip === "true";
 
-  if (validCcList.length > 0) {
-    validCcList.forEach(email => {
+  if (isVip && vipMail && typeof vipMail === "string" && vipMail.includes("@")) {
+    validCcList.push(vipMail);
+    console.log("⭐ vipmail añadido a CC:", vipMail);
+  }
+
+  // eliminar duplicados
+  const uniqueCcList = [...new Set(validCcList)];
+
+  console.log("DEBUG: ccList generada (con limpieza + vipmail):", uniqueCcList);
+
+  if (uniqueCcList.length > 0) {
+    uniqueCcList.forEach(email => {
       form.append("cc_emails", email);
-      console.log("✅ Ejecutivos CC añadidos:", email);
+      console.log("✅ CC añadido:", email);
     });
   } else {
     console.log("ℹ️ No hay correos válidos para cc_emails");
   }
 } else {
   console.log("ℹ️ Este cliente no tiene campo cc_emails definido");
+
+  // Aunque no tenga cc_emails, si es VIP igual mandamos vipmail
+  const vipMail = selectedUser.vipmail;
+  const isVip = selectedUser.vip === true || selectedUser.vip === "true";
+  if (isVip && vipMail && typeof vipMail === "string" && vipMail.includes("@")) {
+    form.append("cc_emails", vipMail);
+    console.log("⭐ vipmail añadido a CC (sin otros cc_emails):", vipMail);
+  }
 }
+
   
   if (ticketData.custom_fields) {
     try {
@@ -653,39 +698,49 @@ const buildTicketSummaryMessage = async (state, from) => {
 };
 
 const triggerAutomaticReply = (ticketId) => {
-    if (!process.env.SERVER_URL || !process.env.BACKEND_STATIC_API_KEY) {
-        console.error("triggerAutomaticReply: SERVER_URL o BACKEND_STATIC_API_KEY no están configurados.");
-        return;
-    }
+  if (!process.env.SERVER_URL || !process.env.BACKEND_STATIC_API_KEY) {
+    console.error("triggerAutomaticReply: SERVER_URL o BACKEND_STATIC_API_KEY no están configurados.");
+    return;
+  }
 
-    const replyEndpointUrl = `${process.env.SERVER_URL}/freshdesk/tickets/${ticketId}/reply`;
+  const replyEndpointUrl = `${process.env.SERVER_URL}/freshdesk/tickets/${ticketId}/reply`;
 
-    const replyConfig = {
-        method: "post",
-        url: replyEndpointUrl,
-        headers: {
-            "Content-Type": "application/json",
-            // Usamos la API Key estática para autenticar la llamada interna entre bot y backend
-            "X-API-Key": process.env.BACKEND_STATIC_API_KEY, 
-        },
-        data: {}, // No necesitamos enviar datos si el mensaje es por defecto
-    };
+  const replyConfig = {
+    method: "post",
+    url: replyEndpointUrl,
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-Key": process.env.BACKEND_STATIC_API_KEY,
+    },
+    data: {
+      message: `
+Estimado cliente,<br><br>
 
-    // Disparamos la llamada sin esperar el resultado
+Confirmamos que hemos recibido su requerimiento y se ha creado un ticket.<br><br><br>
+
+Para ver el estado de su ticket o agregar comentarios, acceda a esta dirección:<br>
+${process.env.FRESHDESK_PUBLIC_URL}/helpdesk/tickets/${ticketId}<br><br>
+
+Muchas gracias,<br><br>
+
+SIGES Support Team
+      `,
+    },
+  };
+  setTimeout(() => {
     axios(replyConfig)
-        .then(replyResponse => {
-            console.log(`✅ Respuesta automática disparada para Ticket ID: ${ticketId}`);
-        })
-        .catch(replyError => {
-            // Registramos la advertencia pero el ticket principal ya fue creado exitosamente
-            const errorMsg = replyError.response 
-                ? JSON.stringify(replyError.response.data) 
-                : replyError.message;
-            console.warn(
-                `⚠️ Advertencia: Fallo al enviar la respuesta automática interna para Ticket ID: ${ticketId}. Error: ${errorMsg}`
-            );
-        });
+      .then(() => {
+        console.log(`⏱️ Respuesta automática enviada para el ticket ${ticketId}`);
+      })
+      .catch((replyError) => {
+        const err = replyError.response
+          ? JSON.stringify(replyError.response.data)
+          : replyError.message;
+        console.warn(`⚠️ Error al enviar la respuesta automática: ${err}`);
+      });
+  }, 5000); 
 };
+
 
 export {
   computerInfo,
