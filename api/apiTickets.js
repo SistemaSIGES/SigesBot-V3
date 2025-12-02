@@ -719,7 +719,7 @@ Estimado cliente,<br><br>
 Confirmamos que hemos recibido su requerimiento y se ha creado un ticket.<br><br><br>
 
 Para ver el estado de su ticket o agregar comentarios, acceda a esta dirección:<br>
-${process.env.FRESHDESK_PUBLIC_URL}/helpdesk/tickets/${ticketId}<br><br>
+https://sistemasiges.freshdesk.com/helpdesk/tickets/${ticketId}<br><br>
 
 Muchas gracias,<br><br>
 
