@@ -1,0 +1,12 @@
+[2025-12-10T17:13:23.035Z] Connection update: connecting
+[2025-12-10T17:13:23.829Z] Connection update: undefined
+[2025-12-10T17:13:23.829Z] QR Code received
+[2025-12-10T17:13:47.788Z] Connection update: undefined
+[2025-12-10T17:13:48.118Z] Connection update: close
+[2025-12-10T17:13:48.119Z] Connection closed. Status: 515, Reason: Stream Errored (restart required)
+[2025-12-10T17:13:48.119Z] Reconnection attempt 1/10 in 1000ms
+[2025-12-10T17:13:49.137Z] Connection update: connecting
+[2025-12-10T17:13:50.404Z] Connection update: open
+[2025-12-10T17:13:50.404Z] Connection opened successfully
+[2025-12-10T17:13:50.451Z] Connection update: undefined
+[2025-12-10T17:14:33.769Z] Iniciando limpieza de recursos...
