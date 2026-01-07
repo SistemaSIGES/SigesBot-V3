@@ -1,6 +1,6 @@
 import "dotenv/config"; // ¡Esta línea debe ir primero!
 import { createBot, createProvider, createFlow } from "@builderbot/bot";
-import { SherpaProvider as Provider } from "@builderbot/provider-sherpa";
+import { BaileysProvider as Provider } from "@builderbot/provider-baileys";
 import { MemoryDB } from "@builderbot/bot";
 
 // Importación de los flujos usando ES6 imports
