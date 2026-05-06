@@ -3,7 +3,7 @@ FROM node:21-alpine3.18 as builder
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9.1.0 --activate
 ENV PNPM_HOME=/usr/local/bin
 
 COPY . .
