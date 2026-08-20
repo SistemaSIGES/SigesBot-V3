@@ -25,6 +25,7 @@ import flujoSOSUnaEstacion from "../flows/SOS/flujoSOSUnaEstacion.js";
 
 import fs from "fs";
 import path from "path";
+import { fetchLatestBaileysVersion } from "baileys";
 
 const PORT = process.env.PORT ?? 3008;
 
@@ -51,7 +52,16 @@ const main = async () => {
     flujoAltaBotUserUnaEstacion,
   ]);
 
-  const adapterProvider = createProvider(Provider);
+  let waVersion;
+  try {
+    const { version } = await fetchLatestBaileysVersion();
+    waVersion = version;
+    console.log(`✅ Versión de WhatsApp Web obtenida dinámicamente: ${waVersion.join(".")}`);
+  } catch (e) {
+    console.log("⚠️ No se pudo obtener versión dinámica de WhatsApp, usando fallback.");
+  }
+
+  const adapterProvider = createProvider(Provider, waVersion ? { version: waVersion } : {});
 
   const { httpServer } = await createBot({
     flow: adapterFlow,
