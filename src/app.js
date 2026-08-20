@@ -23,6 +23,9 @@ import flujoSiges from "../flows/soporte/tiposProblemas/flujoSiges.js";
 import flujoSOS from "../flows/SOS/flujoSOS.js";
 import flujoSOSUnaEstacion from "../flows/SOS/flujoSOSUnaEstacion.js";
 
+import fs from "fs";
+import path from "path";
+
 const PORT = process.env.PORT ?? 3008;
 
 const main = async () => {
@@ -48,14 +51,88 @@ const main = async () => {
     flujoAltaBotUserUnaEstacion,
   ]);
 
-  const adapterProvider = createProvider(Provider, {
-    version: [2, 3000, 1035824857],
-  });
+  const adapterProvider = createProvider(Provider);
 
   const { httpServer } = await createBot({
     flow: adapterFlow,
     provider: adapterProvider,
     database: adapterDB,
+  });
+
+  // Rutas web para ver el QR e iniciar sesión cómodamente desde el navegador
+  adapterProvider.server.get("/", (req, res) => {
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    const qrPath = path.join(process.cwd(), "bot.qr.png");
+    if (fs.existsSync(qrPath)) {
+      const imgBase64 = fs.readFileSync(qrPath).toString("base64");
+      res.end(`
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>SIGES BOT - WhatsApp Login</title>
+          <meta http-equiv="refresh" content="5">
+          <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0f172a; color: #f8fafc; padding: 1rem; }
+            .card { background: #1e293b; padding: 2.5rem; border-radius: 16px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 420px; width: 100%; border: 1px solid #334155; }
+            h1 { font-size: 1.5rem; margin-bottom: 0.75rem; color: #38bdf8; }
+            p { color: #94a3b8; font-size: 0.95rem; margin-bottom: 1.5rem; }
+            .qr-wrapper { background: white; padding: 1rem; border-radius: 12px; display: inline-block; margin-bottom: 1.5rem; }
+            img { display: block; width: 240px; height: 240px; }
+            .badge { display: inline-block; background: #0369a1; color: #e0f2fe; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; }
+            .footer { margin-top: 1rem; font-size: 0.8rem; color: #64748b; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <span class="badge">SIGES BOT</span>
+            <h1 style="margin-top: 0.75rem;">Escaneá el código QR</h1>
+            <p>Abrí WhatsApp en tu celular &gt; <b>Dispositivos vinculados</b> &gt; <b>Vincular un dispositivo</b>.</p>
+            <div class="qr-wrapper">
+              <img src="data:image/png;base64,${imgBase64}" alt="QR WhatsApp" />
+            </div>
+            <p class="footer">⏳ Esta página se actualiza automáticamente cada 5 segundos.</p>
+          </div>
+        </body>
+        </html>
+      `);
+    } else {
+      res.end(`
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>SIGES BOT - Estado</title>
+          <meta http-equiv="refresh" content="5">
+          <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #0f172a; color: #f8fafc; padding: 1rem; }
+            .card { background: #1e293b; padding: 2.5rem; border-radius: 16px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 420px; width: 100%; border: 1px solid #334155; }
+            h1 { font-size: 1.5rem; margin-bottom: 0.75rem; color: #4ade80; }
+            p { color: #94a3b8; font-size: 0.95rem; line-height: 1.5; }
+            .icon { font-size: 3rem; margin-bottom: 1rem; }
+            .footer { margin-top: 1.5rem; font-size: 0.8rem; color: #64748b; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="icon">🤖</div>
+            <h1>SIGES BOT Online</h1>
+            <p>El bot se encuentra en ejecución. Si ya vinculaste tu WhatsApp, el bot está listo para responder mensajes.</p>
+            <p class="footer">Si acabás de reiniciar, aguardá unos segundos que se cargue el código QR.</p>
+          </div>
+        </body>
+        </html>
+      `);
+    }
+  });
+
+  adapterProvider.server.get("/qr", (req, res) => {
+    res.writeHead(302, { Location: "/" });
+    res.end();
   });
 
   httpServer(PORT);
